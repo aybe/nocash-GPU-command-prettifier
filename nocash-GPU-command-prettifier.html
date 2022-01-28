@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+	<title>no$psx polygon formatter</title>
+
+	<style>
+		/* ReSharper disable CssBrowserCompatibility */
+
+		html,
+		body {
+			height: 100%;
+			margin: 0;
+		}
+
+		label,
+		textarea {
+			margin: 5px;
+		}
+
+		.root {
+			display: flex;
+			flex-direction: column;
+			height: 100%;
+		}
+
+		.header {
+			font-weight: bold;
+		}
+
+		.area1 {
+			height: 265px;
+			width: 150px;
+		}
+
+		.area2 {
+			flex-grow: 1;
+		}
+	</style>
+
+	<script>
+
+		// ReSharper disable IdentifierTypo
+
+		document.addEventListener("DOMContentLoaded", update);
+
+		const polyMonochrome = [
+			getColor1,
+			getVertex1, getVertex2, getVertex3, getVertex4
+		];
+
+		const polyTextured = [
+			getColor1,
+			getVertex1, getTexCoord1,
+			getVertex2, getTexCoord2,
+			getVertex3, getTexCoord3,
+			getVertex4, getTexCoord4
+		];
+
+		const polyShaded = [
+			getColor1, getVertex1,
+			getColor2, getVertex2,
+			getColor3, getVertex3,
+			getColor4, getVertex4
+		];
+
+		const polyShadedTextured = [
+			getColor1, getVertex1, getTexCoord1,
+			getColor2, getVertex2, getTexCoord2,
+			getColor3, getVertex3, getTexCoord3,
+			getColor4, getVertex4, getTexCoord4
+		];
+
+		const poly20 = polyMonochrome;
+		const poly22 = polyMonochrome;
+		const poly28 = polyMonochrome;
+		const poly2A = polyMonochrome;
+
+		const poly24 = polyTextured;
+		const poly25 = polyTextured;
+		const poly26 = polyTextured;
+		const poly27 = polyTextured;
+		const poly2C = polyTextured;
+		const poly2D = polyTextured;
+		const poly2E = polyTextured;
+		const poly2F = polyTextured;
+
+		const poly30 = polyShaded;
+		const poly32 = polyShaded;
+		const poly38 = polyShaded;
+		const poly3A = polyShaded;
+
+		const poly34 = polyShadedTextured;
+		const poly36 = polyShadedTextured;
+		const poly3C = polyShadedTextured;
+		const poly3E = polyShadedTextured;
+
+		const polyMap = new Map([
+			[0x20, { reader: poly20, header: `GP0(20h) - Monochrome three-point polygon, opaque` }],
+			[0x22, { reader: poly22, header: `GP0(22h) - Monochrome three-point polygon, semi-transparent` }],
+			[0x28, { reader: poly28, header: `GP0(28h) - Monochrome four-point polygon, opaque` }],
+			[0x2A, { reader: poly2A, header: `GP0(2Ah) - Monochrome four-point polygon, semi-transparent` }],
+			[0x24, { reader: poly24, header: `GP0(24h) - Textured three-point polygon, opaque, texture-blending` }],
+			[0x25, { reader: poly25, header: `GP0(25h) - Textured three-point polygon, opaque, raw-texture` }],
+			[0x26, { reader: poly26, header: `GP0(26h) - Textured three-point polygon, semi-transparent, texture-blending` }],
+			[0x27, { reader: poly27, header: `GP0(27h) - Textured three-point polygon, semi-transparent, raw-texture` }],
+			[0x2C, { reader: poly2C, header: `GP0(2Ch) - Textured four-point polygon, opaque, texture-blending` }],
+			[0x2D, { reader: poly2D, header: `GP0(2Dh) - Textured four-point polygon, opaque, raw-texture` }],
+			[0x2E, { reader: poly2E, header: `GP0(2Eh) - Textured four-point polygon, semi-transparent, texture-blending` }],
+			[0x2F, { reader: poly2F, header: `GP0(2Fh) - Textured four-point polygon, semi-transparent, raw-texture` }],
+			[0x30, { reader: poly30, header: `GP0(30h) - Shaded three-point polygon, opaque` }],
+			[0x32, { reader: poly32, header: `GP0(32h) - Shaded three-point polygon, semi-transparent` }],
+			[0x38, { reader: poly38, header: `GP0(38h) - Shaded four-point polygon, opaque` }],
+			[0x3A, { reader: poly3A, header: `GP0(3Ah) - Shaded four-point polygon, semi-transparent` }],
+			[0x34, { reader: poly34, header: `GP0(34h) - Shaded Textured three-point polygon, opaque, texture-blending` }],
+			[0x36, { reader: poly36, header: `GP0(36h) - Shaded Textured three-point polygon, semi-transparent, tex-blend` }],
+			[0x3C, { reader: poly3C, header: `GP0(3Ch) - Shaded Textured four-point polygon, opaque, texture-blending` }],
+			[0x3E, { reader: poly3E, header: `GP0(3Eh) - Shaded Textured four-point polygon, semi-transparent, tex-blend` }]
+		]);
+
+		function getInt(input, index, count) {
+			const int = parseInt(input.substr(index, count), 16);
+			return int;
+		}
+
+		function getInt8(input, index) {
+			const int = getInt(input, index, 2);
+			return int;
+		}
+
+		function getInt16(input, index) {
+			const int = getInt(input, index, 4);
+			return int;
+		}
+
+		function getString(label, value) {
+			const pretty = document.getElementById("pretty").checked;
+			const spaced = document.getElementById("spaced").checked;
+			const string = `${label}: ${JSON.stringify(value, null, pretty ? 2 : 0)}${spaced ? `\n` : ``}`;
+			return string;
+		}
+
+		function getColor(label, input) {
+			const color = {
+				r: getInt8(input, 6),
+				g: getInt8(input, 4),
+				b: getInt8(input, 2)
+			};
+
+			const string = getString(label, color);
+			return string;
+		}
+
+		function getColor1(input) {
+			const string = getColor(`Color 1`, input);
+			return string;
+		}
+
+		function getColor2(input) {
+			const string = getColor(`Color 2`, input);
+			return string;
+		}
+
+		function getColor3(input) {
+			const string = getColor(`Color 3`, input);
+			return string;
+		}
+
+		function getColor4(input) {
+			const string = getColor(`Color 4`, input);
+			return string;
+		}
+
+		function getVertex(label, input) {
+			const vertex = {
+				x: getInt16(input, 4),
+				y: getInt16(input, 0)
+			};
+
+			const string = getString(label, vertex);
+			return string;
+		}
+
+		function getVertex1(input) {
+			const string = getVertex(`Vertex 1`, input);
+			return string;
+		}
+
+		function getVertex2(input) {
+			const string = getVertex(`Vertex 2`, input);
+			return string;
+		}
+
+		function getVertex3(input) {
+			const string = getVertex(`Vertex 3`, input);
+			return string;
+		}
+
+		function getVertex4(input) {
+			const string = getVertex(`Vertex 4`, input);
+			return string;
+		}
+
+		function getTexCoordBase(input) {
+			const coord = {
+				x: getInt8(input, 6),
+				y: getInt8(input, 4)
+			};
+			return coord;
+		}
+
+		function getTexCoord(label, input) {
+			const coord = getTexCoordBase(input);
+			const string = getString(label, coord);
+			return string;
+		}
+
+		function getTexCoordClut(label, input) {
+			const coord = getTexCoordBase(input);
+
+			const clutData = getInt16(input, 0);
+
+			const clut = {
+				x: ((clutData >> 0) & 0b111111) * 16,
+				y: ((clutData >> 6) & 0b111111111) * 1
+			};
+
+			const value = { coord: coord, clut: clut };
+
+			const string = getString(label, value);
+			return string;
+		}
+
+		function getTexCoordPage(label, input) {
+			const coord = getTexCoordBase(input);
+
+			const pageData = getInt16(input, 0);
+
+			var pageTransparency;
+
+			switch (((pageData >> 5) & 0b11)) {
+				case 0:
+					pageTransparency = "B/2+F/2";
+					break;
+				case 1:
+					pageTransparency = "B+F";
+					break;
+				case 2:
+					pageTransparency = "B-F";
+					break;
+				case 3:
+					pageTransparency = "B+F/4";
+					break;
+				default:
+					pageTransparency = undefined;
+					break;
+			}
+
+			var pageColors;
+
+			switch (((pageData >> 7) & 0b11)) {
+				case 0:
+					pageColors = "4-bit";
+					break;
+				case 1:
+					pageColors = "8-bit";
+					break;
+				case 2:
+					pageColors = "15-bit";
+					break;
+				case 3:
+					pageColors = "Reserved";
+					break;
+				default:
+					pageColors = undefined;
+					break;
+			}
+
+			const page = {
+				x: ((pageData >> 0) & 0b1111) * 64,
+				y: ((pageData >> 4) & 0b1) * 256,
+				colors: pageColors,
+				transparency: pageTransparency
+
+			};
+
+			const texCoordPage = {
+				coord: coord,
+				page: page
+			};
+
+			const string = getString(label, texCoordPage);
+			return string;
+		}
+
+		function getTexCoord1(input) {
+			const string = getTexCoordClut(`TexCoord 1`, input);
+			return string;
+		}
+
+		function getTexCoord2(input) {
+			const string = getTexCoordPage(`TexCoord 2`, input);
+			return string;
+		}
+
+		function getTexCoord3(input) {
+			const string = getTexCoord(`TexCoord 3`, input);
+			return string;
+		}
+
+		function getTexCoord4(input) {
+			const string = getTexCoord(`TexCoord 4`, input);
+			return string;
+		}
+
+		function update() {
+			const source = document.getElementById("sourceArea");
+			const target = document.getElementById("targetArea");
+			target.value = updateImpl(source.value);
+		}
+
+		function updateImpl(input) {
+			const lines = input.split("\n");
+			const array = new Array();
+
+			function write(value) {
+				array.push(value);
+			}
+
+			if (lines.length >= 4) {
+
+				const slice = lines.slice(4);
+
+				const commandHex = slice[0].substr(0, 2);
+				const commandInt = parseInt(commandHex, 16);
+
+				if (polyMap.has(commandInt)) {
+					const value = polyMap.get(commandInt);
+
+					write(`${value.header}:\n`);
+
+					value.reader.forEach(function (item, index) {
+						const func = item;
+						const data = slice[index];
+						const text = func(data);
+						write(text);
+					});
+
+				} else {
+					write(`Polygon command is not implemented: ${commandHex}`);
+				}
+			} else {
+				write(`Invalid polygon command.`);
+			}
+
+			return array.join('\n');
+		}
+
+	</script>
+</head>
+
+<body>
+	<div class="root">
+
+		<label class="header">Formatting options:</label>
+
+		<div style="flex-direction: row; margin: 5px;">
+
+			<input type="checkbox" id="pretty" checked oninput="update()">
+			<label for="pretty">Pretty</label>
+
+			<input type="checkbox" id="spaced" checked oninput="update()">
+			<label for="spaced">Spaced</label>
+
+		</div>
+
+		<label class="header">Command input:</label>
+
+		<textarea id="sourceArea" class="area1" spellcheck="false" onfocus="this.select();" oninput="update()"
+			placeholder="CPU.PC:    8015FF8C
+DMA.Start: 001E8C4C
+DMA.Link:  001B7934
+---
+2C8C8C8C
+00370098
+4300DF7C
+003700B6
+0097FE7D
+005D0098
+0000DF4F
+005D00B6
+0000FE4F">CPU.PC:    8015FF8C
+DMA.Start: 001E8C4C
+DMA.Link:  001B7934
+---
+2C8C8C8C
+00370098
+4300DF7C
+003700B6
+0097FE7D
+005D0098
+0000DF4F
+005D00B6
+0000FE4F</textarea>
+
+		<label class="header">Command output:</label>
+
+		<textarea id="targetArea" class="area2" spellcheck="false" onfocus="this.select();"></textarea>
+
+	</div>
+</body>
+
+</html>
