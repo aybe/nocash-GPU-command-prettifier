@@ -324,6 +324,10 @@
 		function updateImpl(input) {
 			const lines = input.split("\n");
 
+			if (lines.join(`\n`) === ``) {
+				return `To get started, paste a GPU command in the command input text area.`;
+			}
+
 			if (lines[0].match(/CPU\.PC:\s{4}[A-Fa-f0-9]{8}/gm)) {
 				lines.splice(0, 1);
 			}
@@ -339,7 +343,7 @@
 			if (lines[0].match(/---/gm)) {
 				lines.splice(0, 1);
 			} else {
-				return `Invalid command.`;
+				return `GPU command syntax is invalid.`;
 			}
 
 			const array = new Array();
@@ -364,7 +368,7 @@
 				});
 
 			} else {
-				write(`Command is not implemented: ${commandHex}`);
+				write(`GPU command is not implemented: ${commandHex}.`);
 			}
 
 			return array.join('\n');
