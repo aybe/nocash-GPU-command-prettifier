@@ -322,36 +322,48 @@
 
 		function updateImpl(input) {
 			const lines = input.split("\n");
+
+			if (lines[0].match(/CPU\.PC:\s{4}[A-Fa-f0-9]{8}/gm)) {
+				lines.splice(0, 1);
+			}
+
+			if (lines[0].match(/DMA\.Start:\s{1}[A-Fa-f0-9]{8}/gm)) {
+				lines.splice(0, 1);
+			}
+
+			if (lines[0].match(/DMA\.Link:\s{2}[A-Fa-f0-9]{8}/gm)) {
+				lines.splice(0, 1);
+			}
+
+			if (lines[0].match(/---/gm)) {
+				lines.splice(0, 1);
+			} else {
+				return `Invalid command.`;
+			}
+
 			const array = new Array();
 
 			function write(value) {
 				array.push(value);
 			}
 
-			if (lines.length >= 4) {
+			const commandHex = lines[0].substr(0, 2);
+			const commandInt = parseInt(commandHex, 16);
 
-				const slice = lines.slice(4);
+			if (polyMap.has(commandInt)) {
+				const value = polyMap.get(commandInt);
 
-				const commandHex = slice[0].substr(0, 2);
-				const commandInt = parseInt(commandHex, 16);
+				write(`${value.header}:\n`);
 
-				if (polyMap.has(commandInt)) {
-					const value = polyMap.get(commandInt);
+				value.reader.forEach(function (item, index) {
+					const func = item;
+					const data = lines[index];
+					const text = func(data);
+					write(text);
+				});
 
-					write(`${value.header}:\n`);
-
-					value.reader.forEach(function (item, index) {
-						const func = item;
-						const data = slice[index];
-						const text = func(data);
-						write(text);
-					});
-
-				} else {
-					write(`Polygon command is not implemented: ${commandHex}`);
-				}
 			} else {
-				write(`Invalid polygon command.`);
+				write(`Polygon command is not implemented: ${commandHex}`);
 			}
 
 			return array.join('\n');
