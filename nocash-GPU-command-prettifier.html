@@ -136,10 +136,10 @@
 			return int;
 		}
 
-		function getString(label, value) {
+		function getString(label, input, value) {
 			const pretty = document.getElementById("pretty").checked;
 			const spaced = document.getElementById("spaced").checked;
-			const string = `${label}: ${JSON.stringify(value, null, pretty ? 2 : 0)}${spaced ? `\n` : ``}`;
+			const string = `${label} (0x${input.substring(0, 8)}): ${JSON.stringify(value, null, pretty ? 2 : 0)}${spaced ? `\n` : ``}`;
 			return string;
 		}
 
@@ -150,7 +150,7 @@
 				b: getInt8(input, 2)
 			};
 
-			const string = getString(label, color);
+			const string = getString(label, input, color);
 			return string;
 		}
 
@@ -180,7 +180,7 @@
 				y: getInt16(input, 0)
 			};
 
-			const string = getString(label, vertex);
+			const string = getString(label, input, vertex);
 			return string;
 		}
 
@@ -214,7 +214,7 @@
 
 		function getTexCoord(label, input) {
 			const coord = getTexCoordBase(input);
-			const string = getString(label, coord);
+			const string = getString(label, input, coord);
 			return string;
 		}
 
@@ -230,7 +230,7 @@
 
 			const value = { coord: coord, clut: clut };
 
-			const string = getString(label, value);
+			const string = getString(label, input, value);
 			return string;
 		}
 
@@ -292,7 +292,7 @@
 				page: page
 			};
 
-			const string = getString(label, texCoordPage);
+			const string = getString(label, input, texCoordPage);
 			return string;
 		}
 
