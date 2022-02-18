@@ -361,10 +361,22 @@
 
 				write(`${value.header}:\n`);
 
+				const showCol = document.getElementById("showCol").checked;
+				const showVer = document.getElementById("showVer").checked;
+				const showTex = document.getElementById("showTex").checked;
+
 				value.reader.forEach(function (item, index) {
 					const func = item;
 					const data = lines[index];
 					const text = func(data);
+
+					if (!showCol && text.match(/^Col/))
+						return;
+					if (!showVer && text.match(/^Ver/))
+						return;
+					if (!showTex && text.match(/^Tex/))
+						return;
+						
 					write(text);
 				});
 
@@ -390,6 +402,15 @@
 
 			<input type="checkbox" id="spaced" checked oninput="update()">
 			<label for="spaced">Spaced</label>
+
+			<input type="checkbox" id="showCol" checked oninput="update()">
+			<label for="showCol">Color</label>
+
+			<input type="checkbox" id="showVer" checked oninput="update()">
+			<label for="showVer">Vertex</label>
+
+			<input type="checkbox" id="showTex" checked oninput="update()">
+			<label for="showTex">Texture</label>
 
 		</div>
 
